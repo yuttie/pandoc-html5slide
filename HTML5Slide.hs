@@ -18,7 +18,6 @@ import Text.Blaze.Renderer.String
 import Text.Pandoc
 import Text.Pandoc.Highlighting
 import Text.Printf
-import qualified Text.XHtml.Strict as XHtml
 
 writeHTML5SlideString :: WriterOptions -> Pandoc -> String
 writeHTML5SlideString opt pdoc = do
@@ -82,9 +81,9 @@ renderBlock block = case block of
   Para      inls -> p $ mapM_ renderInline inls
   
   CodeBlock attr codestr -> do
-    case highlightHtml False attr codestr of
-      Left err -> error $ show err ++ ": " ++ show attr ++ ", " ++ codestr
-      Right htm -> preEscapedString $ noprettify $ XHtml.renderHtml htm
+    case highlight formatHtmlBlock attr codestr of
+      Nothing  -> error $ "Error: " ++ show attr ++ ", " ++ codestr
+      Just htm -> preEscapedString $ noprettify $ renderHtml htm
   
   RawBlock  format str -> preEscapedString str
   BlockQuote blocks -> blockquote $ mapM_ renderBlock blocks
@@ -157,10 +156,6 @@ renderInline inl = case inl of
   Code attr code ->
     error $ show attr
   Space -> preEscapedString "&nbsp;"
-  EmDash -> preEscapedString "&ndash;"
-  EnDash -> preEscapedString "&mdash;"
-  Apostrophe -> preEscapedString "&rsquo;"
-  Ellipses -> preEscapedString "&#133;"
   LineBreak -> br
   Math mathType str -> error "math"
   RawInline "html" str -> preEscapedString str
