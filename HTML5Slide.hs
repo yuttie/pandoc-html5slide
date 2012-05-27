@@ -14,7 +14,7 @@ import System.Environment
 import System.IO
 import Text.Blaze.Html5 as Html5
 import Text.Blaze.Html5.Attributes as Attr
-import Text.Blaze.Renderer.String
+import Text.Blaze.Html.Renderer.String
 import Text.Pandoc
 import Text.Pandoc.Highlighting
 import Text.Printf
@@ -83,9 +83,9 @@ renderBlock block = case block of
   CodeBlock attr codestr -> do
     case highlight formatHtmlBlock attr codestr of
       Nothing  -> error $ "Error: " ++ show attr ++ ", " ++ codestr
-      Just htm -> preEscapedString $ noprettify $ renderHtml htm
+      Just htm -> preEscapedToMarkup $ noprettify $ renderHtml htm
   
-  RawBlock  format str -> preEscapedString str
+  RawBlock  format str -> preEscapedToMarkup str
   BlockQuote blocks -> blockquote $ mapM_ renderBlock blocks
   OrderedList attr bss -> do
     ol $ do
@@ -155,10 +155,10 @@ renderInline inl = case inl of
     toHtml code
   Code attr code ->
     error $ show attr
-  Space -> preEscapedString "&nbsp;"
+  Space -> preEscapedToMarkup ("&nbsp;" :: String)
   LineBreak -> br
   Math mathType str -> error "math"
-  RawInline "html" str -> preEscapedString str
+  RawInline "html" str -> preEscapedToMarkup str
   RawInline format str -> error ("rawinline: " ++ format)
   Link inls (url, title) -> do
     a ! href (toValue url) ! alt (toValue title) $
