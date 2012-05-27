@@ -128,7 +128,7 @@ renderBlock block = case block of
 renderInline :: Inline -> Html
 renderInline inl = case inl of
   Str ss ->
-    string ss
+    toHtml ss
   Emph inls ->
     em $ mapM_ renderInline inls
   Strong inls ->
@@ -142,17 +142,17 @@ renderInline inl = case inl of
   SmallCaps inls ->
     small $ mapM_ renderInline inls
   Quoted SingleQuote inls -> do
-    string "'"
+    toHtml ("'" :: String)
     mapM_ renderInline inls
-    string "'"
+    toHtml ("'" :: String)
   Quoted DoubleQuote inls -> do
-    string "\""
+    toHtml ("\"" :: String)
     mapM_ renderInline inls
-    string "\""
+    toHtml ("\"" :: String)
   Cite cs inls -> do
     Html5.cite $ mapM_ renderInline inls
   Code ([], ["url"], []) code ->
-    string code
+    toHtml code
   Code attr code ->
     error $ show attr
   Space -> preEscapedString "&nbsp;"
