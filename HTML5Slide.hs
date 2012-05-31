@@ -82,7 +82,7 @@ renderBlock block = case block of
   
   CodeBlock attr codestr -> do
     case highlight formatHtmlBlock attr codestr of
-      Nothing  -> error $ "Error: " ++ show attr ++ ", " ++ codestr
+      Nothing  -> pre $ toMarkup codestr
       Just htm -> preEscapedToMarkup $ noprettify $ renderHtml htm
   
   RawBlock  format str -> preEscapedToMarkup str
