@@ -8,6 +8,7 @@ import Data.Data
 import Data.Generics
 import Data.List
 import Data.IORef
+import Data.Maybe
 import Data.Time.Clock
 import Data.Time.LocalTime
 import System.Directory (doesFileExist)
@@ -67,24 +68,17 @@ replace from to ss
   | from `isPrefixOf` ss = to ++ drop (length from) ss
   | otherwise = Prelude.head ss : replace from to (tail ss)
 
-noprettify :: String -> String
-noprettify "" = ""
-noprettify ss
-  | sc `isPrefixOf` ss =
-    "\"noprettyprint " ++ tail (take (length sc) ss) ++
-    noprettify (drop (length sc) ss)
-  | otherwise =
-      Prelude.head ss : noprettify (tail ss)
-
 renderBlock :: Block -> Html
 renderBlock block = case block of
   Plain     inls -> mapM_ renderInline inls
   Para      inls -> p $ mapM_ renderInline inls
   
   CodeBlock attr codestr -> do
-    case highlight formatHtmlBlock attr codestr of
-      Nothing  -> pre $ toMarkup codestr
-      Just htm -> preEscapedToMarkup $ noprettify $ renderHtml htm
+    fromMaybe (pre $ toMarkup codestr) $
+      highlight formatHtmlBlock attr' codestr
+    where
+      (is, cs, kvs) = attr
+      attr' = (is, "noprettyprint" : cs, kvs)  -- Prevent html5slides from highlighting code too.
   
   RawBlock  format str -> preEscapedToMarkup str
   BlockQuote blocks -> blockquote $ mapM_ renderBlock blocks
