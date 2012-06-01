@@ -10,6 +10,7 @@ import Data.List
 import Data.IORef
 import Data.Time.Clock
 import Data.Time.LocalTime
+import System.Directory (doesFileExist)
 import System.Environment
 import System.IO
 import Text.Blaze.Html5 as Html5
@@ -31,7 +32,7 @@ writeHTML5Slide opt (Pandoc Meta {..} blocks) = do
         mapM_ renderInline $ everywhere (mkT $ replace "<br>" " ") docTitle
       Html5.meta ! charset "utf-8"
       script ! src "http://html5slides.googlecode.com/svn/trunk/slides.js" $ return ()
-      link ! rel "stylesheet" ! href "syntax.css"
+      link ! rel "stylesheet" ! href (toValue hlCssFilename)
       link ! rel "stylesheet" ! href "style.css"
 
     Html5.body ! Attr.style "display: none" $ do
@@ -174,6 +175,12 @@ main = do
   r <- newIORef ""
   forever $ do
     try_  $ do
+      -- CSS
+      hlCssFileExists <- doesFileExist hlCssFilename
+      unless hlCssFileExists $ do
+        writeFile hlCssFilename $ styleToCss pygments
+        logPutStrLn $ "create \"" ++ hlCssFilename ++ "\""
+      -- Slide
       strsrc <- readFile filename
       bef <- readIORef r
       when (bef /= strsrc) $ do
@@ -181,11 +188,7 @@ main = do
         writeFile outname $
           writeHTML5SlideString defaultWriterOptions doc
         writeIORef r strsrc
-        cur <- getCurrentTime
-        tz <- getCurrentTimeZone
-        let lt = utcToLocalTime tz cur
-        printf "[%s]: update\n" (show lt)
-        hFlush stdout
+        logPutStrLn "update"
     threadDelay $ 10^(6::Int)
 
 try_ :: IO a -> IO ()
@@ -196,3 +199,18 @@ try_ m = do
       print e
     Right _ ->
       return ()
+
+hlCssFilename :: String
+hlCssFilename = "syntax.css"
+
+getCurrentLocalTime :: IO LocalTime
+getCurrentLocalTime = do
+  cur <- getCurrentTime
+  tz <- getCurrentTimeZone
+  return $ utcToLocalTime tz cur
+
+logPutStrLn :: String -> IO ()
+logPutStrLn xs = do
+  lt <- getCurrentLocalTime
+  printf "[%s]: %s\n" (show lt) xs
+  hFlush stdout
